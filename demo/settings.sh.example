@@ -1,0 +1,6 @@
+# Settings for the bash script
+
+server=yourserver
+userid=youruser
+passwd=yourpassword
+dbname=yourdb
