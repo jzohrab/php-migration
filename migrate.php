@@ -53,6 +53,7 @@ if (isset($options['c'])) {
 }
 
 class MysqlMigrate {
+  var $dbname;
   var $db;
 
   function __construct() {
@@ -68,6 +69,7 @@ class MysqlMigrate {
 
   function process($location, $host, $db, $user, $pass) {
     $this->log("mysql migrate (location: '$location', host: '$host', db: '$db', user: '$user', pass: '$pass')");
+    $this->dbname = $db;
     $this->create_connection($host, $db, $user, $pass);
     if (is_dir($location)) {
       $this->process_folder($location);
@@ -100,16 +102,22 @@ class MysqlMigrate {
     }
   }
 
-  function get_last_migration_date() {
-    $res = $this->db->query("SHOW TABLES LIKE 'migrations'");
-    if ($res->num_rows == 0) {
-      $this->log("Creating migration tabel in database");
-      if (!$this->db->query("CREATE TABLE migrations (id varchar(255), PRIMARY KEY (id))")) {
-        $this->log("Table creation failed: (" . $this->db->errno . ") " . $this->db->error);
-        die;
-      }
+  function create_migrations_table_if_needed() {
+    $check_sql = "SELECT TABLE_NAME FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = '{$this->dbname}' AND TABLE_NAME = 'migrations'";
+    $res = $this->db->query($check_sql);
+    if ($res->num_rows != 0) {
+      return;
     }
+    $this->log("Creating migrations table in database");
+    if (!$this->db->query("CREATE TABLE migrations (id varchar(255), PRIMARY KEY (id))")) {
+      $this->log("Table creation failed: (" . $this->db->errno . ") " . $this->db->error);
+      die;
+    }
+  }
 
+  function get_last_migration_date() {
+    $this->create_migrations_table_if_needed();
     $res = $this->db->query("select max(id) as id from migrations");
     $row = $res->fetch_assoc();
     if ($row['id'] == null) return null;
