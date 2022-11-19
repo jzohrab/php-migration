@@ -61,9 +61,11 @@ class MysqlMigrate {
   }
 
   function create_migration($location, $name) {
-    $filename = $location . '/' . date("YmdHis") . "_$name.sql";
-    $this->log("Creating migration file: $filename");
-    $f = fopen($filename, "a") or die("Unable to open file!");
+    $d = date("Ymd_His");
+    $filename = "{$location}/{$d}_{$name}.sql";
+    $this->log("New migration file: $filename");
+    $f = fopen($filename, "w") or die("Unable to open file!");
+    fwrite($f, "-- TODO");
     fclose($f);
   }
 
