@@ -121,12 +121,6 @@ class MysqlMigrate {
     }
   }
 
-  function process_file($file) {
-    $this->log("processing file: $file");
-    $commands = file_get_contents($file);
-    $this->sql($commands);
-  }
-
   function show_mysql_variables() {
     $this->log("Mysql variables:");
     $result = $this->db->query("SHOW VARIABLES;");
@@ -155,10 +149,12 @@ class MysqlMigrate {
     echo "$message\n";
   }
 
-  private function sql($query) {
-    $this->log("running multi query...");
+  function process_file($file) {
+    $this->log("  running $file");
+    $commands = file_get_contents($file);
+
     /* execute multi query */
-    if ($this->db->multi_query($query)) {
+    if ($this->db->multi_query($commands)) {
       do {
         $this->db->store_result();
         if ($this->db->info) {
