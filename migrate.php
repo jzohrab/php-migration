@@ -23,10 +23,10 @@
  *
  * @author Péter Képes - https://github.com/kepes
  */
-ini_set('memory_limit', '512M');
-$options = getopt("hm:d:u:p:c:");
 
-if ($options['h'] === false) {
+ini_set('memory_limit', '512M');
+
+function show_help() {
   echo "Usage: php migrate.php [options] [folder|script_file]\n";
   echo "Options:\n";
   echo " -h   This help\n";
@@ -37,6 +37,11 @@ if ($options['h'] === false) {
   echo " -c NAME      Create migration file with given name\n";
   echo "\n";
   exit;
+}
+
+$options = getopt("hm:d:u:p:c:");
+if ($options == false || isset($options["h"])) {
+    show_help();
 }
 
 $location = array_pop($argv);
