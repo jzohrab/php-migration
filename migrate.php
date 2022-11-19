@@ -94,7 +94,15 @@ class MysqlMigrate {
     foreach ($files as $file) {
       $applied = $this->migration_already_applied($file);
       if (!is_dir($file) && ! $applied) {
-        $this->process_file($file);
+        try {
+          $this->process_file($file);
+        }
+        catch (Exception $e) {
+          $msg = $e->getMessage();
+          echo "\nFile {$file} exception:\n{$msg}\n";
+          echo "Quitting.\n\n";
+          die;
+        }
         $this->add_migration_to_database($file);
       }
     }
