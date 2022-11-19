@@ -1,3 +1,4 @@
 # Private demo settings
 
 demo/settings.sh
+demo/migrations_extra/*.sql
