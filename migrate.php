@@ -96,7 +96,7 @@ class MysqlMigrate {
   }
 
   function add_migration_to_database($date) {
-    if (!$this->db->query("INSERT INTO migrations values ('$date')")) {
+    if (!$this->db->query("INSERT INTO _migrations values ('$date')")) {
       $this->log("Table insert failed: (" . $this->db->errno . ") " . $this->db->error);
       die;
     }
@@ -104,13 +104,13 @@ class MysqlMigrate {
 
   function create_migrations_table_if_needed() {
     $check_sql = "SELECT TABLE_NAME FROM information_schema.TABLES
-      WHERE TABLE_SCHEMA = '{$this->dbname}' AND TABLE_NAME = 'migrations'";
+      WHERE TABLE_SCHEMA = '{$this->dbname}' AND TABLE_NAME = '_migrations'";
     $res = $this->db->query($check_sql);
     if ($res->num_rows != 0) {
       return;
     }
-    $this->log("Creating migrations table in database");
-    if (!$this->db->query("CREATE TABLE migrations (id varchar(255), PRIMARY KEY (id))")) {
+    $this->log("Creating _migrations table in database");
+    if (!$this->db->query("CREATE TABLE _migrations (id varchar(255), PRIMARY KEY (id))")) {
       $this->log("Table creation failed: (" . $this->db->errno . ") " . $this->db->error);
       die;
     }
@@ -118,12 +118,12 @@ class MysqlMigrate {
 
   function get_last_migration_date() {
     $this->create_migrations_table_if_needed();
-    $res = $this->db->query("select max(id) as id from migrations");
+    $res = $this->db->query("select max(id) as id from _migrations");
     $row = $res->fetch_assoc();
     if ($row['id'] == null) return null;
 
     $date = DateTime::createFromFormat("YmdHis", $row['id']);
-    if ($date == false) die("Invalid date format in migration table: " . $row['id']);
+    if ($date == false) die("Invalid date format in _migrations table: " . $row['id']);
     $this->log("Last migration date in database: " . $row['id']);
     return $date;
   }
