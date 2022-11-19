@@ -80,16 +80,21 @@ class MysqlMigrate {
     $this->db->close();
   }
 
-
-  function should_apply($filename) {
-    if (is_dir($filename)) {
-      return false;
-    }
-    $sql = "select filename from _migrations where filename = '{$filename}'";
-    $res = $this->db->query($sql);
-    return ($res->num_rows == 0);
+  private function log($message) {
+    echo "$message\n";
   }
 
+  private function create_connection($host, $db, $user, $pass) {
+    $this->log("connecting to db: mysqli($host, $user, $pass, $db)");
+    $this->db = new mysqli($host, $user, $pass, $db);
+    if ($this->db->connect_errno) {
+        $n = $mysqli->connect_errno;
+        $e = $mysqli->connect_error;
+        $this->log("Failed to connect to MySQL: ({$n}) {$e}\n");
+        die;
+    }
+    $this->db->options(MYSQLI_READ_DEFAULT_GROUP,"max_allowed_packet=128M");
+  }
 
   function process_folder($folder) {
     $this->create_migrations_table_if_needed();
@@ -111,13 +116,6 @@ class MysqlMigrate {
     }
   }
 
-  function add_migration_to_database($file) {
-    if (!$this->db->query("INSERT INTO _migrations values ('$file')")) {
-      $this->log("Table insert failed: (" . $this->db->errno . ") " . $this->db->error);
-      die;
-    }
-  }
-
   function create_migrations_table_if_needed() {
     $check_sql = "SELECT TABLE_NAME FROM information_schema.TABLES
       WHERE TABLE_SCHEMA = '{$this->dbname}' AND TABLE_NAME = '_migrations'";
@@ -132,20 +130,20 @@ class MysqlMigrate {
     }
   }
 
-  private function create_connection($host, $db, $user, $pass) {
-    $this->log("connecting to db: mysqli($host, $user, $pass, $db)");
-    $this->db = new mysqli($host, $user, $pass, $db);
-    if ($this->db->connect_errno) {
-        $n = $mysqli->connect_errno;
-        $e = $mysqli->connect_error;
-        $this->log("Failed to connect to MySQL: ({$n}) {$e}\n");
-        die;
+  function should_apply($filename) {
+    if (is_dir($filename)) {
+      return false;
     }
-    $this->db->options(MYSQLI_READ_DEFAULT_GROUP,"max_allowed_packet=128M");
+    $sql = "select filename from _migrations where filename = '{$filename}'";
+    $res = $this->db->query($sql);
+    return ($res->num_rows == 0);
   }
 
-  private function log($message) {
-    echo "$message\n";
+  function add_migration_to_database($file) {
+    if (!$this->db->query("INSERT INTO _migrations values ('$file')")) {
+      $this->log("Table insert failed: (" . $this->db->errno . ") " . $this->db->error);
+      die;
+    }
   }
 
   function process_file($file) {
