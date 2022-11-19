@@ -22,6 +22,7 @@
  *  php migrate.php -m 127.0.0.1 -d my_database -u username -p secret ./migrations/20150118140555_MyFirstMigration.sql
  *
  * @author Péter Képes - https://github.com/kepes
+ * with small mods afterwards.
  */
 
 ini_set('memory_limit', '512M');
@@ -47,10 +48,17 @@ if ($options == false || isset($options["h"])) {
 $location = array_pop($argv);
 $migration = new MysqlMigrate();
 if (isset($options['c'])) {
-  $migration->create_migration($location, $options['c']);
+  $name = $options['c'];
+  $d = date("Ymd_His");
+  $filename = "{$location}/{$d}_{$name}.sql";
+  $f = fopen($filename, "w") or die("Unable to open file!");
+  fwrite($f, "-- TODO");
+  fclose($f);
+  echo "New migration file: $filename\n\n";
 } else {
   $migration->process($location, $options['m'], $options['d'], $options['u'], $options['p']);
 }
+
 
 class MysqlMigrate {
   var $dbname;
@@ -58,15 +66,6 @@ class MysqlMigrate {
 
   function __construct() {
     date_default_timezone_set('UTC');
-  }
-
-  function create_migration($location, $name) {
-    $d = date("Ymd_His");
-    $filename = "{$location}/{$d}_{$name}.sql";
-    $this->log("New migration file: $filename");
-    $f = fopen($filename, "w") or die("Unable to open file!");
-    fwrite($f, "-- TODO");
-    fclose($f);
   }
 
   function process($location, $host, $db, $user, $pass) {
