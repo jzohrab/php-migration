@@ -78,6 +78,7 @@ class MysqlMigrate {
     } else {
       $this->process_file($location);
     }
+    $this->db->close();
   }
 
 
