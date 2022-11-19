@@ -46,7 +46,7 @@ if ($options == false || isset($options["h"])) {
 
 $location = array_pop($argv);
 $migration = new MysqlMigrate();
-if ($options['c'] != null) {
+if (isset($options['c'])) {
   $migration->create_migration($location, $options['c']);
 } else {
   $migration->process($location, $options['m'], $options['d'], $options['u'], $options['p']);
