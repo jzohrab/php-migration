@@ -79,10 +79,13 @@ class MysqlMigrate {
   }
 
 
-  function migration_already_applied($filename) {
+  function should_apply($filename) {
+    if (is_dir($filename)) {
+      return false;
+    }
     $sql = "select filename from _migrations where filename = '{$filename}'";
     $res = $this->db->query($sql);
-    return ($res->num_rows != 0);
+    return ($res->num_rows == 0);
   }
 
 
@@ -91,20 +94,18 @@ class MysqlMigrate {
     $this->log("processing folder: $folder");
     chdir($folder);
     $files = glob("*.sql");
-    foreach ($files as $file) {
-      $applied = $this->migration_already_applied($file);
-      if (!is_dir($file) && ! $applied) {
-        try {
-          $this->process_file($file);
-        }
-        catch (Exception $e) {
-          $msg = $e->getMessage();
-          echo "\nFile {$file} exception:\n{$msg}\n";
-          echo "Quitting.\n\n";
-          die;
-        }
-        $this->add_migration_to_database($file);
+    $outstanding = array_filter($files, fn($f) => $this->should_apply($f));
+    foreach ($outstanding as $file) {
+      try {
+        $this->process_file($file);
       }
+      catch (Exception $e) {
+        $msg = $e->getMessage();
+        echo "\nFile {$file} exception:\n{$msg}\n";
+        echo "Quitting.\n\n";
+        die;
+      }
+      $this->add_migration_to_database($file);
     }
   }
 
