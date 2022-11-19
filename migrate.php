@@ -78,25 +78,30 @@ class MysqlMigrate {
     }
   }
 
+
+  function migration_already_applied($filename) {
+    $sql = "select filename from _migrations where filename = '{$filename}'";
+    $res = $this->db->query($sql);
+    return ($res->num_rows != 0);
+  }
+
+
   function process_folder($folder) {
+    $this->create_migrations_table_if_needed();
     $this->log("processing folder: $folder");
     chdir($folder);
     $files = glob("*.sql");
-    $date_in_db = $this->get_last_migration_date();
-
     foreach ($files as $file) {
-      $date_string = explode('_', $file, 2);
-      $date_string = $date_string[0];
-      $file_date = DateTime::createFromFormat("YmdHis", $date_string);
-      if (!is_dir($file) && $file_date !== false && ($date_in_db == null || $date_in_db < $file_date) ) {
+      $applied = $this->migration_already_applied($file);
+      if (!is_dir($file) && ! $applied) {
         $this->process_file($file);
-        $this->add_migration_to_database($date_string);
+        $this->add_migration_to_database($file);
       }
     }
   }
 
-  function add_migration_to_database($date) {
-    if (!$this->db->query("INSERT INTO _migrations values ('$date')")) {
+  function add_migration_to_database($file) {
+    if (!$this->db->query("INSERT INTO _migrations values ('$file')")) {
       $this->log("Table insert failed: (" . $this->db->errno . ") " . $this->db->error);
       die;
     }
@@ -110,22 +115,10 @@ class MysqlMigrate {
       return;
     }
     $this->log("Creating _migrations table in database");
-    if (!$this->db->query("CREATE TABLE _migrations (id varchar(255), PRIMARY KEY (id))")) {
+    if (!$this->db->query("CREATE TABLE _migrations (filename varchar(255), PRIMARY KEY (filename))")) {
       $this->log("Table creation failed: (" . $this->db->errno . ") " . $this->db->error);
       die;
     }
-  }
-
-  function get_last_migration_date() {
-    $this->create_migrations_table_if_needed();
-    $res = $this->db->query("select max(id) as id from _migrations");
-    $row = $res->fetch_assoc();
-    if ($row['id'] == null) return null;
-
-    $date = DateTime::createFromFormat("YmdHis", $row['id']);
-    if ($date == false) die("Invalid date format in _migrations table: " . $row['id']);
-    $this->log("Last migration date in database: " . $row['id']);
-    return $date;
   }
 
   function process_file($file) {
@@ -150,7 +143,9 @@ class MysqlMigrate {
     $this->log("connecting to db: mysqli($host, $user, $pass, $db)");
     $this->db = new mysqli($host, $user, $pass, $db);
     if ($this->db->connect_errno) {
-        $this->log("Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error . "\n");
+        $n = $mysqli->connect_errno;
+        $e = $mysqli->connect_error;
+        $this->log("Failed to connect to MySQL: ({$n}) {$e}\n");
         die;
     }
     $this->db->options(MYSQLI_READ_DEFAULT_GROUP,"max_allowed_packet=128M");
@@ -168,8 +163,6 @@ class MysqlMigrate {
         $this->db->store_result();
         if ($this->db->info) {
           $this->log($this->db->info);
-        } else if ($this->db->stat) {
-          $this->log($this->db->stat);
         } elseif ($this->db->more_results()) {
           echo '.';
         }
