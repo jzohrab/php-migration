@@ -163,31 +163,21 @@ class MysqlMigrate {
     $commands = file_get_contents($file);
 
     /* execute multi query */
-    if ($this->db->multi_query($commands)) {
-      do {
-        $this->db->store_result();
-        if ($this->db->info) {
-          $this->log($this->db->info);
-        } elseif ($this->db->more_results()) {
-          echo '.';
-        }
-      } while ($this->db->next_result());
-    } else {
-      $this->log("something went wrong :(");
-      $this->check_db_error();
-      die;
-    }
-    echo "\n";
-    $this->check_db_error();
-  }
+    $this->db->multi_query($commands);
+    do {
+      $this->db->store_result();
+      if ($this->db->info) {
+        $this->log($this->db->info);
+      }
+    } while ($this->db->next_result());
 
-  private function check_db_error() {
     if ($this->db->error) {
       $this->log("error:");
       $this->log($this->db->error);
       die;
     }
   }
+
 
   private function startswith($haystack, $needle) {
     return substr($haystack, 0, strlen($needle)) === $needle;
