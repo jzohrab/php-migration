@@ -133,18 +133,6 @@ class MysqlMigrate {
     }
   }
 
-  function show_mysql_variables() {
-    $this->log("Mysql variables:");
-    $result = $this->db->query("SHOW VARIABLES;");
-    if (!$result) {
-        die($message . "\n");
-    } else {
-      foreach ($result as $row) {
-        $this->log($row['Variable_name'] . ": " . $row['Value']);
-      }
-    }
-  }
-
   private function create_connection($host, $db, $user, $pass) {
     $this->log("connecting to db: mysqli($host, $user, $pass, $db)");
     $this->db = new mysqli($host, $user, $pass, $db);
@@ -181,8 +169,4 @@ class MysqlMigrate {
     }
   }
 
-
-  private function startswith($haystack, $needle) {
-    return substr($haystack, 0, strlen($needle)) === $needle;
-  }
 }
