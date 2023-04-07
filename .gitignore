@@ -1,4 +1,7 @@
-# Private demo settings
+# sqlite migrated db
+db/
 
-demo/settings.sh
-demo/migrations_extra/*.sql
+# Mysql Private demo settings
+mysql/demo/settings.sh
+mysql/demo/migrations_extra/*.sql
+
